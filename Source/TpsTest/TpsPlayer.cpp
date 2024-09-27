@@ -3,6 +3,7 @@
 
 #include "TpsPlayer.h"
 
+#include "Enemy.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
@@ -56,7 +57,7 @@ void ATpsPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	UEnhancedInputComponent* ip = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	ip->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ATpsPlayer::OnMove);
 	ip->BindAction(IA_Look, ETriggerEvent::Triggered, this, &ATpsPlayer::OnLook);
-	ip->BindAction(IA_Fire, ETriggerEvent::Triggered, this, &ATpsPlayer::OnFire);
+	ip->BindAction(IA_Fire, ETriggerEvent::Started, this, &ATpsPlayer::OnFire);
 
 }
 
@@ -86,7 +87,7 @@ void ATpsPlayer::OnFire(const FInputActionValue& Value)
 	FVector end = start + CamComp->GetForwardVector() * 100000.f;
 	FHitResult res;
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(res, start, end, ECC_Visibility);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(res, start, end, ECC_WorldStatic);
 	if (bHit)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), VFX, res.ImpactPoint);
@@ -96,6 +97,9 @@ void ATpsPlayer::OnFire(const FInputActionValue& Value)
 			FVector dir = res.ImpactPoint - GetActorLocation();
 			hitComp->AddForce(dir * 100000.f);
 		}
+		auto enemy = Cast<AEnemy>(res.GetActor());
+		if (enemy)
+			enemy->TakeMyDamage();
 	}
 }
 
